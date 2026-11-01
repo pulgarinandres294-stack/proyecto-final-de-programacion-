@@ -1,0 +1,3 @@
+Introducción 
+
+vamos a crear una aplicación/pagina la cual será un sistema de información e inventario de los equipos médicos y biomédicos el cual servirá para registrar los modelos , los seriales , tipo de maquina o herramienta , fecha de entrega , fechas de mantenimientos junto a sus respectivas observaciones , y que informe cuando se deberá hacer su próxima revisión 
