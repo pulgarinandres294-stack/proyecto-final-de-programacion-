@@ -1,3 +1,3 @@
 Introducción 
 
-vamos a crear una aplicación/pagina la cual será un un sistema centralizado para llevar el control de inventarios, modelos, seriales y cronogramas de mantenimiento preventivo y correctivo los equipos médicos y biomédicos junto a sus respectivas observaciones , y que informe cuando se deberá hacer su próxima revisión 
+vamos a crear una aplicación/pagina la cual será un un sistema centralizado para llevar el control de inventarios, modelos, seriales y cronogramas de mantenimiento preventivo y correctivo de los equipos médicos y biomédicos junto a sus respectivas observaciones , y que informe cuando se deberá hacer su próxima revisión 
