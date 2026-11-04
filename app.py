@@ -8,7 +8,7 @@ ARCHIVO_USUARIOS = "usuarios.txt"
 
 
 def cargar_base_datos():
-  """Carga los usuarios desde el archivo de texto o crea los valores por defecto numerados."""
+  """Carga los usuarios desde el archivo de texto o crea los valores por defecto."""
   db = {
       "tecnologo_1": {
           "password": "123",
@@ -66,12 +66,12 @@ class SistemaBiomedicoApp:
 
   def __init__(self, root):
     self.root = root
-    self.root.title("Sistema de Inventario - Inicio de Sesión")
+    self.root.title("Sistema Biomédico - Inicio de Sesión")
     self.root.geometry("700x350")
     self.root.resizable(False, False)
 
     # 1. PANEL IZQUIERDO: Carrusel de imágenes
-    self.lbl_imagen = tk.Label(root, bg="#0f172a")
+    self.lbl_imagen = tk.Label(root, bg="#ffffff")
     self.lbl_imagen.place(x=0, y=0, width=350, height=350)
 
     self.nombres_imagenes = ["fondo_1.jpg", "fondo_2.jpg", "fondo_3.jpg"]
@@ -85,7 +85,7 @@ class SistemaBiomedicoApp:
         )
         self.imagenes_pil.append(img)
       except Exception:
-        img = Image.new("RGB", (350, 350), color="#0f172a")
+        img = Image.new("RGB", (350, 350), color="#e2e8f0")
         self.imagenes_pil.append(img)
 
     self.fotos_carrusel = [
@@ -96,16 +96,16 @@ class SistemaBiomedicoApp:
 
     self.root.after(5000, self.proximo_slide)
 
-    # 2. PANEL DERECHO: Formulario de inicio de sesión
-    self.frame_form = tk.Frame(root, bg="#0f172a")
+    # 2. PANEL DERECHO: Formulario de inicio de sesión con fondo blanco
+    self.frame_form = tk.Frame(root, bg="#ffffff")
     self.frame_form.place(x=350, y=0, width=350, height=350)
 
     titulo = tk.Label(
         self.frame_form,
-        text="SISTEMA DE INVENTARIO",
+        text="SISTEMA BIOMÉDICO",
         font=("Arial", 12, "bold"),
-        bg="#0f172a",
-        fg="#38bdf8",
+        bg="#ffffff",
+        fg="#0284c7",
     )
     titulo.pack(pady=(30, 10))
 
@@ -113,16 +113,16 @@ class SistemaBiomedicoApp:
         self.frame_form,
         text="Usuario",
         font=("Arial", 9, "bold"),
-        bg="#0f172a",
-        fg="#cbd5e1",
+        bg="#ffffff",
+        fg="#334155",
     )
     lbl_usuario.pack(anchor="w", padx=40)
     self.entry_usuario = tk.Entry(
         self.frame_form,
         font=("Arial", 11),
-        bg="#1e293b",
-        fg="white",
-        insertbackground="white",
+        bg="#f1f5f9",
+        fg="#0f172a",
+        insertbackground="#0f172a",
         relief="flat",
     )
     self.entry_usuario.pack(fill="x", padx=40, pady=2)
@@ -131,16 +131,16 @@ class SistemaBiomedicoApp:
         self.frame_form,
         text="Contraseña",
         font=("Arial", 9, "bold"),
-        bg="#0f172a",
-        fg="#cbd5e1",
+        bg="#ffffff",
+        fg="#334155",
     )
     lbl_password.pack(anchor="w", padx=40, pady=(6, 0))
     self.entry_password = tk.Entry(
         self.frame_form,
         font=("Arial", 11),
-        bg="#1e293b",
-        fg="white",
-        insertbackground="white",
+        bg="#f1f5f9",
+        fg="#0f172a",
+        insertbackground="#0f172a",
         show="*",
         relief="flat",
     )
@@ -150,10 +150,10 @@ class SistemaBiomedicoApp:
         self.frame_form,
         text="¿Olvidaste tu contraseña?",
         font=("Arial", 8),
-        bg="#0f172a",
-        fg="#38bdf8",
-        activebackground="#0f172a",
-        activeforeground="#7dd3fc",
+        bg="#ffffff",
+        fg="#0284c7",
+        activebackground="#ffffff",
+        activeforeground="#0369a1",
         bd=0,
         cursor="hand2",
         command=self.ventana_recuperar,
@@ -178,10 +178,10 @@ class SistemaBiomedicoApp:
         self.frame_form,
         text="¿No tienes cuenta? Regístrate aquí",
         font=("Arial", 9),
-        bg="#0f172a",
-        fg="#38bdf8",
-        activebackground="#0f172a",
-        activeforeground="#7dd3fc",
+        bg="#ffffff",
+        fg="#0284c7",
+        activebackground="#ffffff",
+        activeforeground="#0369a1",
         bd=0,
         cursor="hand2",
         command=self.ventana_registro,
@@ -210,46 +210,76 @@ class SistemaBiomedicoApp:
   def ventana_registro(self):
     ven_reg = tk.Toplevel(self.root)
     ven_reg.title("Registro de Nuevo Usuario")
-    ven_reg.geometry("320x350")
-    ven_reg.config(bg="#0f172a")
+    ven_reg.geometry("320x360")
+    ven_reg.config(bg="#ffffff")
     ven_reg.resizable(False, False)
 
     tk.Label(
         ven_reg,
         text="REGISTRO DE USUARIO",
         font=("Arial", 11, "bold"),
-        bg="#0f172a",
-        fg="#38bdf8",
+        bg="#ffffff",
+        fg="#0284c7",
     ).pack(pady=15)
 
     tk.Label(
         ven_reg,
         text="Usuario (ej. tecnologo_2):",
         font=("Arial", 9),
-        bg="#0f172a",
-        fg="white",
+        bg="#ffffff",
+        fg="#334155",
     ).pack(anchor="w", padx=30)
-    ent_usu = tk.Entry(ven_reg, font=("Arial", 10), width=26)
+    ent_usu = tk.Entry(
+        ven_reg,
+        font=("Arial", 10),
+        width=26,
+        bg="#f1f5f9",
+        fg="#0f172a",
+        relief="flat",
+    )
     ent_usu.pack(pady=2)
 
     tk.Label(
         ven_reg,
         text="Correo Electrónico:",
         font=("Arial", 9),
-        bg="#0f172a",
-        fg="white",
+        bg="#ffffff",
+        fg="#334155",
     ).pack(anchor="w", padx=30)
-    ent_corr = tk.Entry(ven_reg, font=("Arial", 10), width=26)
+    ent_corr = tk.Entry(
+        ven_reg,
+        font=("Arial", 10),
+        width=26,
+        bg="#f1f5f9",
+        fg="#0f172a",
+        relief="flat",
+    )
     ent_corr.pack(pady=2)
 
     tk.Label(
-        ven_reg, text="Contraseña:", font=("Arial", 9), bg="#0f172a", fg="white"
+        ven_reg,
+        text="Contraseña:",
+        font=("Arial", 9),
+        bg="#ffffff",
+        fg="#334155",
     ).pack(anchor="w", padx=30)
-    ent_pass = tk.Entry(ven_reg, font=("Arial", 10), width=26, show="*")
+    ent_pass = tk.Entry(
+        ven_reg,
+        font=("Arial", 10),
+        width=26,
+        show="*",
+        bg="#f1f5f9",
+        fg="#0f172a",
+        relief="flat",
+    )
     ent_pass.pack(pady=2)
 
     tk.Label(
-        ven_reg, text="Seleccione Rol:", font=("Arial", 9), bg="#0f172a", fg="white"
+        ven_reg,
+        text="Seleccione Rol:",
+        font=("Arial", 9),
+        bg="#ffffff",
+        fg="#334155",
     ).pack(anchor="w", padx=30)
     rol_var = tk.StringVar(value="Tecnólogo Biomédico")
     tk.Radiobutton(
@@ -257,27 +287,27 @@ class SistemaBiomedicoApp:
         text="Tecnólogo Biomédico",
         variable=rol_var,
         value="Tecnólogo Biomédico",
-        bg="#0f172a",
-        fg="white",
-        selectcolor="#1e293b",
+        bg="#ffffff",
+        fg="#334155",
+        selectcolor="#f1f5f9",
     ).pack(anchor="w", padx=40)
     tk.Radiobutton(
         ven_reg,
         text="Ingeniero Biomédico",
         variable=rol_var,
         value="Ingeniero Biomédico",
-        bg="#0f172a",
-        fg="white",
-        selectcolor="#1e293b",
+        bg="#ffffff",
+        fg="#334155",
+        selectcolor="#f1f5f9",
     ).pack(anchor="w", padx=40)
     tk.Radiobutton(
         ven_reg,
         text="Supervisor",
         variable=rol_var,
         value="Supervisor",
-        bg="#0f172a",
-        fg="white",
-        selectcolor="#1e293b",
+        bg="#ffffff",
+        fg="#334155",
+        selectcolor="#f1f5f9",
     ).pack(anchor="w", padx=40)
 
     def guardar_usuario():
@@ -319,15 +349,15 @@ class SistemaBiomedicoApp:
     ven_rec = tk.Toplevel(self.root)
     ven_rec.title("Recuperar Contraseña")
     ven_rec.geometry("350x280")
-    ven_rec.config(bg="#0f172a")
+    ven_rec.config(bg="#ffffff")
     ven_rec.resizable(False, False)
 
     tk.Label(
         ven_rec,
         text="RECUPERAR CONTRASEÑA",
         font=("Arial", 11, "bold"),
-        bg="#0f172a",
-        fg="#38bdf8",
+        bg="#ffffff",
+        fg="#0284c7",
     ).pack(pady=15)
 
     self.metodo_recu = tk.StringVar(value="usuario")
@@ -337,9 +367,9 @@ class SistemaBiomedicoApp:
         text="Ingresar mi Usuario",
         variable=self.metodo_recu,
         value="usuario",
-        bg="#0f172a",
-        fg="white",
-        selectcolor="#1e293b",
+        bg="#ffffff",
+        fg="#334155",
+        selectcolor="#f1f5f9",
         font=("Arial", 9),
         command=lambda: actualizar_campo(),
     ).pack(anchor="w", padx=40)
@@ -349,9 +379,9 @@ class SistemaBiomedicoApp:
         text="Probar otro método (Ingresar Correo)",
         variable=self.metodo_recu,
         value="correo",
-        bg="#0f172a",
-        fg="white",
-        selectcolor="#1e293b",
+        bg="#ffffff",
+        fg="#334155",
+        selectcolor="#f1f5f9",
         font=("Arial", 9),
         command=lambda: actualizar_campo(),
     ).pack(anchor="w", padx=40, pady=5)
@@ -360,12 +390,19 @@ class SistemaBiomedicoApp:
         ven_rec,
         text="Escribe tu Usuario:",
         font=("Arial", 9),
-        bg="#0f172a",
-        fg="white",
+        bg="#ffffff",
+        fg="#334155",
     )
     lbl_dinamico.pack(anchor="w", padx=40, pady=(10, 0))
 
-    ent_valor = tk.Entry(ven_rec, font=("Arial", 10), width=28)
+    ent_valor = tk.Entry(
+        ven_rec,
+        font=("Arial", 10),
+        width=28,
+        bg="#f1f5f9",
+        fg="#0f172a",
+        relief="flat",
+    )
     ent_valor.pack(pady=5)
 
     def actualizar_campo():
@@ -421,23 +458,23 @@ class SistemaBiomedicoApp:
     ).pack(pady=15)
 
 
-# --- PANTALLA PRINCIPAL DINÁMICA SEGÚN EL ROL ---
+# --- PANTALLA PRINCIPAL DINÁMICA CON TEMA CLARO ---
 def abrir_pantalla_principal(usuario_activo, rol_activo):
   ventana_principal = tk.Tk()
-  ventana_principal.title(f"Sistema de Inventario - {rol_activo}")
-  ventana_principal.geometry("780x500")
-  ventana_principal.config(bg="#0f172a")
+  ventana_principal.title(f"Sistema Biomédico - {rol_activo}")
+  ventana_principal.geometry("780x520")
+  ventana_principal.config(bg="#f8fafc")
   ventana_principal.resizable(False, False)
 
-  header = tk.Frame(ventana_principal, bg="#1e293b", height=65)
+  header = tk.Frame(ventana_principal, bg="#e2e8f0", height=65)
   header.pack(fill="x")
 
   lbl_bienvenida = tk.Label(
       header,
       text=f"Usuario: {usuario_activo} | Rol: {rol_activo}",
       font=("Arial", 11, "bold"),
-      bg="#1e293b",
-      fg="#38bdf8",
+      bg="#e2e8f0",
+      fg="#0f172a",
   )
   lbl_bienvenida.pack(side="left", padx=20)
 
@@ -459,16 +496,16 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
   )
   btn_salir.pack(side="right", padx=20)
 
-  cuerpo = tk.Frame(ventana_principal, bg="#0f172a")
-  cuerpo.pack(fill="both", expand=True, padx=30, pady=20)
+  cuerpo = tk.Frame(ventana_principal, bg="#f8fafc")
+  cuerpo.pack(fill="both", expand=True, padx=30, pady=15)
 
   tk.Label(
       cuerpo,
       text="Panel de Control - Gestión de Equipos Biomédicos",
       font=("Arial", 13, "bold"),
-      bg="#0f172a",
-      fg="white",
-  ).pack(anchor="w", pady=8)
+      bg="#f8fafc",
+      fg="#0f172a",
+  ).pack(anchor="w", pady=5)
 
   def mostrar_accion(mensaje):
     messagebox.showinfo(
@@ -476,23 +513,23 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
         f"Accediendo a: {mensaje}\n(Perfil actual: {usuario_activo})",
     )
 
-  # --- VENTANA DE GESTIÓN DE PERFILES CON REGLAS DE JERARQUÍA ---
+  # --- VENTANA DE GESTIÓN DE PERFILES CON TEMA CLARO ---
   def gestionar_usuarios():
     ven_gestion = tk.Toplevel(ventana_principal)
     ven_gestion.title("Gestión y Eliminación de Perfiles")
     ven_gestion.geometry("420x360")
-    ven_gestion.config(bg="#0f172a")
+    ven_gestion.config(bg="#ffffff")
     ven_gestion.resizable(False, False)
 
     tk.Label(
         ven_gestion,
         text="PERFILES REGISTRADOS",
         font=("Arial", 11, "bold"),
-        bg="#0f172a",
-        fg="#38bdf8",
+        bg="#ffffff",
+        fg="#0284c7",
     ).pack(pady=15)
 
-    frame_lista = tk.Frame(ven_gestion, bg="#0f172a")
+    frame_lista = tk.Frame(ven_gestion, bg="#ffffff")
     frame_lista.pack(fill="both", expand=True, padx=20)
 
     def actualizar_lista():
@@ -500,22 +537,18 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
         widget.destroy()
 
       for usu, info in list(USUARIOS_DB.items()):
-        fila = tk.Frame(frame_lista, bg="#1e293b", pady=5)
+        fila = tk.Frame(frame_lista, bg="#f1f5f9", pady=5)
         fila.pack(fill="x", pady=3)
 
         lbl_info = tk.Label(
             fila,
             text=f"{usu} ({info['rol']})",
             font=("Arial", 9, "bold"),
-            bg="#1e293b",
-            fg="white",
+            bg="#f1f5f9",
+            fg="#0f172a",
         )
         lbl_info.pack(side="left", padx=10)
 
-        # Reglas de permisos para eliminar:
-        # 1. Nadie se puede borrar a sí mismo.
-        # 2. Si el usuario actual es "supervisor_1", puede borrar a cualquier otro usuario (incluyendo otros supervisores).
-        # 3. Si el usuario actual es OTRO supervisor (ej. "supervisor_2"), NO puede borrar cuentas de Supervisor.
         puede_borrar = True
         etiqueta_estado = ""
 
@@ -542,8 +575,8 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
               fila,
               text=etiqueta_estado,
               font=("Arial", 8),
-              bg="#1e293b",
-              fg="#38bdf8",
+              bg="#f1f5f9",
+              fg="#64748b",
           )
           lbl_tag.pack(side="right", padx=10)
 
@@ -565,122 +598,158 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
 
     actualizar_lista()
 
+  # --- OPCIONES DE ÁREAS MÉDICAS (UCI Y NEONATOLOGÍA) ---
+  tk.Label(
+      cuerpo,
+      text="Áreas de Especialización Médica:",
+      font=("Arial", 10, "bold"),
+      bg="#f8fafc",
+      fg="#0284c7",
+  ).pack(anchor="w", pady=(5, 2))
+
+  tk.Button(
+      cuerpo,
+      text="🏥 Equipos de Cuidados Intensivos (UCI)",
+      font=("Arial", 9, "bold"),
+      bg="#0284c7",
+      fg="white",
+      activebackground="#0369a1",
+      activeforeground="white",
+      relief="flat",
+      width=45,
+      anchor="w",
+      padx=10,
+      command=lambda: mostrar_accion(
+          "Gestión de equipos en Cuidados Intensivos (Ventiladores, Monitores, etc.)"
+      ),
+  ).pack(pady=3)
+
+  tk.Button(
+      cuerpo,
+      text="👶 Equipos de Neonatología",
+      font=("Arial", 9, "bold"),
+      bg="#0284c7",
+      fg="white",
+      activebackground="#0369a1",
+      activeforeground="white",
+      relief="flat",
+      width=45,
+      anchor="w",
+      padx=10,
+      command=lambda: mostrar_accion(
+          "Gestión de equipos en Neonatología (Incubadoras, Cunas radiantes, etc.)"
+      ),
+  ).pack(pady=3)
+
+  tk.Label(
+      cuerpo,
+      text="Herramientas de Rol:",
+      font=("Arial", 10, "bold"),
+      bg="#f8fafc",
+      fg="#0284c7",
+  ).pack(anchor="w", pady=(8, 2))
+
   # --- OPCIONES SEGÚN EL ROL ---
   if rol_activo == "Tecnólogo Biomédico":
     tk.Button(
         cuerpo,
         text="📅 Registrar Fechas y Proceso de Mantenimiento",
-        font=("Arial", 10, "bold"),
-        bg="#1e293b",
-        fg="white",
-        activebackground="#334155",
-        activeforeground="white",
+        font=("Arial", 9, "bold"),
+        bg="#e2e8f0",
+        fg="#0f172a",
+        activebackground="#cbd5e1",
+        activeforeground="#0f172a",
         relief="flat",
-        width=42,
+        width=45,
         anchor="w",
         padx=10,
         command=lambda: mostrar_accion(
             "Registro de fechas, observaciones y proceso operativo"
         ),
-    ).pack(pady=5)
+    ).pack(pady=3)
 
     tk.Button(
         cuerpo,
         text="📝 Agregar Observaciones Técnicas",
-        font=("Arial", 10, "bold"),
-        bg="#1e293b",
-        fg="white",
-        activebackground="#334155",
-        activeforeground="white",
+        font=("Arial", 9, "bold"),
+        bg="#e2e8f0",
+        fg="#0f172a",
+        activebackground="#cbd5e1",
+        activeforeground="#0f172a",
         relief="flat",
-        width=42,
+        width=45,
         anchor="w",
         padx=10,
         command=lambda: mostrar_accion("Agregar observaciones de mantenimiento"),
-    ).pack(pady=5)
+    ).pack(pady=3)
 
   elif rol_activo in ["Ingeniero Biomédico", "Supervisor"]:
     tk.Button(
         cuerpo,
         text="👁️ Ver y Auditar Registros de Tecnólogos",
-        font=("Arial", 10, "bold"),
-        bg="#1e293b",
-        fg="white",
-        activebackground="#334155",
-        activeforeground="white",
+        font=("Arial", 9, "bold"),
+        bg="#e2e8f0",
+        fg="#0f172a",
+        activebackground="#cbd5e1",
+        activeforeground="#0f172a",
         relief="flat",
-        width=42,
+        width=45,
         anchor="w",
         padx=10,
         command=lambda: mostrar_accion(
             "Visualización y revisión de trabajos de los tecnólogos"
         ),
-    ).pack(pady=5)
+    ).pack(pady=3)
 
     tk.Button(
         cuerpo,
         text="✏️ Editar, Corregir y Analizar Mantenimientos",
-        font=("Arial", 10, "bold"),
-        bg="#1e293b",
-        fg="white",
-        activebackground="#334155",
-        activeforeground="white",
+        font=("Arial", 9, "bold"),
+        bg="#e2e8f0",
+        fg="#0f172a",
+        activebackground="#cbd5e1",
+        activeforeground="#0f172a",
         relief="flat",
-        width=42,
+        width=45,
         anchor="w",
         padx=10,
         command=lambda: mostrar_accion(
             "Edición de registros y emisión de análisis ingenieril"
         ),
-    ).pack(pady=5)
+    ).pack(pady=3)
 
     tk.Button(
         cuerpo,
         text="💰 Gestión de Presupuestos de Equipos Médicos",
-        font=("Arial", 10, "bold"),
-        bg="#1e293b",
-        fg="white",
-        activebackground="#334155",
-        activeforeground="white",
+        font=("Arial", 9, "bold"),
+        bg="#e2e8f0",
+        fg="#0f172a",
+        activebackground="#cbd5e1",
+        activeforeground="#0f172a",
         relief="flat",
-        width=42,
+        width=45,
         anchor="w",
         padx=10,
         command=lambda: mostrar_accion(
             "Control y revisión de presupuestos de máquinas biomédicas"
         ),
-    ).pack(pady=5)
+    ).pack(pady=3)
 
     if rol_activo == "Supervisor":
       tk.Button(
           cuerpo,
           text="👥 Gestionar y Eliminar Perfiles de Usuario",
-          font=("Arial", 10, "bold"),
+          font=("Arial", 9, "bold"),
           bg="#b91c1c",
           fg="white",
           activebackground="#991b1b",
           activeforeground="white",
           relief="flat",
-          width=42,
+          width=45,
           anchor="w",
           padx=10,
           command=gestionar_usuarios,
-      ).pack(pady=5)
-
-  tk.Button(
-      cuerpo,
-      text="📦 Consultar Inventario General de Equipos",
-      font=("Arial", 10, "bold"),
-      bg="#1e293b",
-      fg="white",
-      activebackground="#334155",
-      activeforeground="white",
-      relief="flat",
-      width=42,
-      anchor="w",
-      padx=10,
-      command=lambda: mostrar_accion("Inventario General de Máquinas Biomédicas"),
-  ).pack(pady=5)
+      ).pack(pady=3)
 
   ventana_principal.mainloop()
 

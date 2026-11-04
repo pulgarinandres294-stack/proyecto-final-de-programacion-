@@ -1,1 +1,1 @@
-supervisor_2::Supervisor123::pulgarinandres294@gmil.com::Supervisor
+supervisor_1::123::sup1@biomedica.com::Supervisor
