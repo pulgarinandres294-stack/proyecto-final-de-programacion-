@@ -65,7 +65,7 @@ def cargar_equipos():
       with open(ARCHIVO_EQUIPOS, "r", encoding="utf-8") as f:
         for linea in f:
           partes = linea.strip().split("::")
-          if len(partes) == 8:
+          if len(partes) >= 8:
             equipos.append({
                 "area": partes[0],
                 "nombre": partes[1],
@@ -75,6 +75,9 @@ def cargar_equipos():
                 "ultimo_registro": partes[5],
                 "prox_mant": partes[6],
                 "prox_calib": partes[7],
+                "observaciones": (
+                    partes[8] if len(partes) > 8 else "Sin observaciones"
+                ),
             })
     except Exception as e:
       print(f"Error al leer equipos: {e}")
@@ -85,8 +88,9 @@ def guardar_equipos(equipos):
   try:
     with open(ARCHIVO_EQUIPOS, "w", encoding="utf-8") as f:
       for eq in equipos:
+        obs = eq.get("observaciones", "Sin observaciones")
         f.write(
-            f"{eq['area']}::{eq['nombre']}::{eq['serial']}::{eq['modelo']}::{eq['funciones']}::{eq['ultimo_registro']}::{eq['prox_mant']}::{eq['prox_calib']}\n"
+            f"{eq['area']}::{eq['nombre']}::{eq['serial']}::{eq['modelo']}::{eq['funciones']}::{eq['ultimo_registro']}::{eq['prox_mant']}::{eq['prox_calib']}::{obs}\n"
         )
   except Exception as e:
     print(f"Error al guardar equipos: {e}")
@@ -233,8 +237,8 @@ class SistemaBiomedicoApp:
 
     if usuario in USUARIOS_DB and USUARIOS_DB[usuario]["password"] == password:
       rol_usuario = USUARIOS_DB[usuario]["rol"]
-      self.root.destroy()
-      abrir_pantalla_principal(usuario, rol_usuario)
+      self.root.withdraw()
+      abrir_pantalla_principal(usuario, rol_usuario, self.root)
     else:
       messagebox.showerror("Error", "Usuario o contraseña incorrectos.")
 
@@ -489,9 +493,227 @@ class SistemaBiomedicoApp:
     ).pack(pady=15)
 
 
-# --- VENTANA DE GESTIÓN DE EQUIPOS (CORREGIDA) ---
-def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
-  ven_area = tk.Toplevel()  # <-- Corregido para mantener el flujo principal
+def abrir_ventana_herramienta(
+    accion_titulo, area_nombre, usuario_activo, rol_activo
+):
+  ven_herramienta = tk.Toplevel()
+  ven_herramienta.title(f"Herramienta: {accion_titulo} - {area_nombre}")
+  ven_herramienta.geometry("850x550")
+  ven_herramienta.config(bg="#f1f5f9")
+  ven_herramienta.resizable(False, False)
+
+  header = tk.Frame(ven_herramienta, bg="#0f172a", height=55)
+  header.pack(fill="x")
+  tk.Label(
+      header,
+      text=f"⚙️ {accion_titulo} | Área: {area_nombre} | Usuario: {usuario_activo}",
+      font=("Arial", 10, "bold"),
+      bg="#0f172a",
+      fg="#38bdf8",
+  ).pack(side="left", padx=20)
+
+  cuerpo = tk.Frame(ven_herramienta, bg="#f1f5f9")
+  cuerpo.pack(fill="both", expand=True, padx=20, pady=15)
+
+  frame_notif = tk.Frame(
+      cuerpo, bg="#eff6ff", bd=1, relief="solid", padx=15, pady=10
+  )
+  frame_notif.pack(fill="x", pady=(0, 10))
+
+  tk.Label(
+      frame_notif,
+      text="🔔 Notificaciones y Estado de Mantenimiento / Calibración:",
+      font=("Arial", 10, "bold"),
+      bg="#eff6ff",
+      fg="#1e40af",
+  ).pack(anchor="w", pady=(0, 5))
+
+  lbl_estado_alertas = tk.Label(
+      frame_notif,
+      text="Analizando equipos y fechas programadas...",
+      font=("Arial", 9),
+      bg="#eff6ff",
+      fg="#334155",
+      justify="left",
+  )
+  lbl_estado_alertas.pack(anchor="w")
+
+  frame_inv = tk.Frame(cuerpo, bg="#ffffff", bd=1, relief="solid")
+  frame_inv.pack(fill="both", expand=True)
+
+  tk.Label(
+      frame_inv,
+      text=f"📋 Equipos Registrados en {area_nombre} para {accion_titulo}",
+      font=("Arial", 11, "bold"),
+      bg="#ffffff",
+      fg="#0f172a",
+  ).pack(anchor="w", padx=15, pady=10)
+
+  canvas_h = tk.Canvas(frame_inv, bg="#ffffff", highlightthickness=0)
+  canvas_h.pack(fill="both", expand=True, padx=15, pady=5)
+
+  scroll_h = tk.Scrollbar(
+      frame_inv, orient="vertical", command=canvas_h.yview
+  )
+  scroll_h.pack(side="right", fill="y")
+  canvas_h.configure(yscrollcommand=scroll_h.set)
+
+  frame_items_h = tk.Frame(canvas_h, bg="#ffffff")
+  canvas_h.create_window((0, 0), window=frame_items_h, anchor="nw")
+
+  lista_equipos = cargar_equipos()
+
+  def actualizar_datos_herramienta():
+    for widget in frame_items_h.winfo_children():
+      widget.destroy()
+
+    filtrados = [eq for eq in lista_equipos if eq["area"] == area_nombre]
+    hoy = datetime.now().date()
+    mensajes_alerta = []
+
+    if not filtrados:
+      tk.Label(
+          frame_items_h,
+          text="No hay equipos registrados en esta área para gestionar.",
+          font=("Arial", 10),
+          bg="#ffffff",
+          fg="#64748b",
+      ).pack(pady=30)
+      lbl_estado_alertas.config(
+          text="✅ No hay equipos registrados. Todo en orden."
+      )
+      return
+
+    for eq in filtrados:
+      try:
+        f_mant = datetime.strptime(eq["prox_mant"], "%Y-%m-%d").date()
+        dias_mant = (f_mant - hoy).days
+        if dias_mant <= 5:
+          mensajes_alerta.append(
+              f"⚠️ ALERTA: '{eq['nombre']}' (Serial: {eq['serial']}) requiere"
+              f" Mantenimiento pronto ({eq['prox_mant']})."
+          )
+      except Exception:
+        pass
+
+      tarjeta = tk.Frame(
+          frame_items_h, bg="#f8fafc", bd=1, relief="solid", padx=10, pady=8
+      )
+      tarjeta.pack(fill="x", pady=4, padx=5)
+
+      info = (
+          f"Máquina: {eq['nombre']}  |  Modelo: {eq['modelo']}  |  Serial:"
+          f" {eq['serial']}\nFunciones: {eq['funciones']}\n🕒 Último Registro:"
+          f" {eq['ultimo_registro']}   |   📅 Próx. Mant: {eq['prox_mant']}  "
+          f" |   🔧 Próx. Calib: {eq['prox_calib']}\n📝 Observaciones:"
+          f" {eq.get('observaciones', 'Sin observaciones')}"
+      )
+
+      lbl_info = tk.Label(
+          tarjeta,
+          text=info,
+          font=("Arial", 9),
+          bg="#f8fafc",
+          fg="#0f172a",
+          justify="left",
+      )
+      lbl_info.pack(side="left")
+
+      btn_accion = tk.Button(
+          tarjeta,
+          text="Actualizar / Observación",
+          font=("Arial", 8, "bold"),
+          bg="#0284c7",
+          fg="white",
+          relief="flat",
+          cursor="hand2",
+          command=lambda s=eq["serial"]: abrir_modal_actualizar(s),
+      )
+      btn_accion.pack(side="right", padx=5)
+
+    if mensajes_alerta:
+      lbl_estado_alertas.config(text="\n".join(mensajes_alerta), fg="#b91c1c")
+    else:
+      lbl_estado_alertas.config(
+          text="✅ Todos los equipos de esta área tienen sus fechas al día.",
+          fg="#15803d",
+      )
+
+    frame_items_h.update_idletasks()
+    canvas_h.config(scrollregion=canvas_h.bbox("all"))
+
+  def abrir_modal_actualizar(serial):
+    ven_mod = tk.Toplevel(ven_herramienta)
+    ven_mod.title(f"Gestionar Equipo - Serial {serial}")
+    ven_mod.geometry("380x300")
+    ven_mod.config(bg="#ffffff")
+    ven_mod.resizable(False, False)
+
+    tk.Label(
+        ven_mod,
+        text=f"Actualizar Registro ({accion_titulo})",
+        font=("Arial", 10, "bold"),
+        bg="#ffffff",
+        fg="#0284c7",
+    ).pack(pady=10)
+
+    tk.Label(
+        ven_mod,
+        text="Nuevas Observaciones o Notas Técnicas:",
+        font=("Arial", 9),
+        bg="#ffffff",
+        fg="#334155",
+    ).pack(anchor="w", padx=25)
+    ent_obs = tk.Entry(ven_mod, font=("Arial", 10), width=30)
+    ent_obs.pack(pady=5)
+
+    tk.Label(
+        ven_mod,
+        text="Nueva Fecha Próx. Mantenimiento (AAAA-MM-DD):",
+        font=("Arial", 9),
+        bg="#ffffff",
+        fg="#334155",
+    ).pack(anchor="w", padx=25)
+    ent_m = tk.Entry(ven_mod, font=("Arial", 10), width=30)
+    ent_m.pack(pady=5)
+
+    def guardar_actualizacion():
+      nueva_obs = ent_obs.get().strip()
+      nuevo_m = ent_m.get().strip()
+
+      for eq in lista_equipos:
+        if eq["serial"] == serial:
+          if nueva_obs:
+            eq["observaciones"] = f"[{usuario_activo}]: {nueva_obs}"
+          if nuevo_m:
+            eq["prox_mant"] = nuevo_m
+          eq["ultimo_registro"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+          break
+
+      guardar_equipos(lista_equipos)
+      messagebox.showinfo(
+          "Actualizado",
+          "El equipo ha sido actualizado con éxito.",
+          parent=ven_mod,
+      )
+      ven_mod.destroy()
+      actualizar_datos_herramienta()
+
+    tk.Button(
+        ven_mod,
+        text="Guardar Cambios",
+        font=("Arial", 9, "bold"),
+        bg="#0284c7",
+        fg="white",
+        width=20,
+        command=guardar_actualizacion,
+    ).pack(pady=15)
+
+  actualizar_datos_herramienta()
+
+
+def abrir_ventana_area(area_nombre, usuario_activo, rol_activo, root_login):
+  ven_area = tk.Toplevel()
   ven_area.title(f"Zona Clínica - {area_nombre}")
   ven_area.geometry("900x580")
   ven_area.config(bg="#f1f5f9")
@@ -509,7 +731,7 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
 
   def cerrar_zona():
     ven_area.destroy()
-    abrir_pantalla_principal(usuario_activo, rol_activo)
+    abrir_pantalla_principal(usuario_activo, rol_activo, root_login)
 
   tk.Button(
       header,
@@ -537,7 +759,8 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
           dias_mant = (f_mant - hoy).days
           if dias_mant <= 5:
             alertas.append(
-                f"⚠️ El equipo '{eq['nombre']}' (Serial: {eq['serial']}) tiene su Mantenimiento próximo o vencido ({eq['prox_mant']})."
+                f"⚠️ El equipo '{eq['nombre']}' (Serial: {eq['serial']}) tiene"
+                f" su Mantenimiento próximo o vencido ({eq['prox_mant']})."
             )
         except Exception:
           pass
@@ -623,6 +846,7 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
           "ultimo_registro": ultimo_reg,
           "prox_mant": mant,
           "prox_calib": calib,
+          "observaciones": "Registrado inicialmente",
       }
 
       lista_equipos.append(nuevo)
@@ -643,14 +867,9 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
         command=guardar_nuevo_equipo,
     ).pack(pady=15)
 
-  def mostrar_accion_herramienta(accion):
-    messagebox.showinfo(
-        f"Herramienta de {rol_activo}",
-        f"Ejecutando en {area_nombre}:\n{accion}\n(Usuario: {usuario_activo})",
-        parent=ven_area,
-    )
-
-  frame_herramientas = tk.Frame(cuerpo, bg="#ffffff", bd=1, relief="solid", padx=15, pady=10)
+  frame_herramientas = tk.Frame(
+      cuerpo, bg="#ffffff", bd=1, relief="solid", padx=15, pady=10
+  )
   frame_herramientas.pack(fill="x", pady=(0, 10))
 
   tk.Label(
@@ -675,8 +894,11 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
         cursor="hand2",
         padx=10,
         pady=5,
-        command=lambda: mostrar_accion_herramienta(
-            "Registro de fechas, observaciones y proceso operativo"
+        command=lambda: abrir_ventana_herramienta(
+            "Registro de Fechas y Procesos",
+            area_nombre,
+            usuario_activo,
+            rol_activo,
         ),
     ).pack(side="left", padx=5)
 
@@ -690,8 +912,8 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
         cursor="hand2",
         padx=10,
         pady=5,
-        command=lambda: mostrar_accion_herramienta(
-            "Agregar observaciones de mantenimiento"
+        command=lambda: abrir_ventana_herramienta(
+            "Observaciones Técnicas", area_nombre, usuario_activo, rol_activo
         ),
     ).pack(side="left", padx=5)
 
@@ -706,8 +928,8 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
         cursor="hand2",
         padx=8,
         pady=5,
-        command=lambda: mostrar_accion_herramienta(
-            "Revisión y auditoría de trabajos de los tecnólogos"
+        command=lambda: abrir_ventana_herramienta(
+            "Auditoría de Registros", area_nombre, usuario_activo, rol_activo
         ),
     ).pack(side="left", padx=3)
 
@@ -721,8 +943,11 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
         cursor="hand2",
         padx=8,
         pady=5,
-        command=lambda: mostrar_accion_herramienta(
-            "Edición de registros y análisis ingenieril"
+        command=lambda: abrir_ventana_herramienta(
+            "Análisis y Edición de Mantenimiento",
+            area_nombre,
+            usuario_activo,
+            rol_activo,
         ),
     ).pack(side="left", padx=3)
 
@@ -736,8 +961,8 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
         cursor="hand2",
         padx=8,
         pady=5,
-        command=lambda: mostrar_accion_herramienta(
-            "Control y revisión de presupuestos de máquinas"
+        command=lambda: abrir_ventana_herramienta(
+            "Control de Presupuestos", area_nombre, usuario_activo, rol_activo
         ),
     ).pack(side="left", padx=3)
 
@@ -778,7 +1003,9 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
       fg="#0f172a",
   ).pack(anchor="w", padx=15, pady=10)
 
-  canvas_tabla = tk.Canvas(frame_tabla_contenedor, bg="#ffffff", highlightthickness=0)
+  canvas_tabla = tk.Canvas(
+      frame_tabla_contenedor, bg="#ffffff", highlightthickness=0
+  )
   canvas_tabla.pack(fill="both", expand=True, padx=15, pady=5)
 
   scroll_tabla = tk.Scrollbar(
@@ -813,9 +1040,10 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
       tarjeta_eq.pack(fill="x", pady=4, padx=5)
 
       info_texto = (
-          f"Máquina: {eq['nombre']}  |  Modelo: {eq['modelo']}  |  Serial: {eq['serial']}\n"
-          f"Funciones: {eq['funciones']}\n"
-          f"🕒 Último Registro: {eq['ultimo_registro']}   |   📅 Próx. Mant: {eq['prox_mant']}   |   🔧 Próx. Calib: {eq['prox_calib']}"
+          f"Máquina: {eq['nombre']}  |  Modelo: {eq['modelo']}  |  Serial:"
+          f" {eq['serial']}\nFunciones: {eq['funciones']}\n🕒 Último Registro:"
+          f" {eq['ultimo_registro']}   |   📅 Próx. Mant: {eq['prox_mant']}  "
+          f" |   🔧 Próx. Calib: {eq['prox_calib']}"
       )
 
       lbl_detalles = tk.Label(
@@ -857,9 +1085,8 @@ def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
   actualizar_tabla()
 
 
-# --- PANTALLA PRINCIPAL (SELECCIÓN DE ZONA CLÍNICA - CORREGIDA) ---
-def abrir_pantalla_principal(usuario_activo, rol_activo):
-  ventana_principal = tk.Toplevel()  # <-- Corregido para mantener el flujo principal
+def abrir_pantalla_principal(usuario_activo, rol_activo, root_login):
+  ventana_principal = tk.Toplevel()
   ventana_principal.title(f"Sistema Biomédico - {rol_activo}")
   ventana_principal.geometry("750x450")
   ventana_principal.config(bg="#f1f5f9")
@@ -879,9 +1106,7 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
 
   def cerrar_sesion():
     ventana_principal.destroy()
-    root_login = tk.Tk()
-    app = SistemaBiomedicoApp(root_login)
-    root_login.mainloop()
+    root_login.deiconify()
 
   btn_salir = tk.Button(
       header,
@@ -920,11 +1145,14 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
 
   def ingresar_zona(nombre_area):
     ventana_principal.destroy()
-    abrir_ventana_area(nombre_area, usuario_activo, rol_activo)
+    abrir_ventana_area(nombre_area, usuario_activo, rol_activo, root_login)
 
   btn_uci = tk.Button(
       cuerpo,
-      text="🏥 Cuidados Intensivos (UCI)\n(Gestión de equipos, ventiladores, monitores y herramientas de rol)",
+      text=(
+          "🏥 Cuidados Intensivos (UCI)\n(Gestión de equipos, ventiladores,"
+          " monitores y herramientas de rol)"
+      ),
       font=("Arial", 10, "bold"),
       bg="#0284c7",
       fg="white",
@@ -941,7 +1169,10 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
 
   btn_neo = tk.Button(
       cuerpo,
-      text="👶 Neonatología\n(Gestión de incubadoras, cunas radiantes y herramientas de rol)",
+      text=(
+          "👶 Neonatología\n(Gestión de incubadoras, cunas radiantes y"
+          " herramientas de rol)"
+      ),
       font=("Arial", 10, "bold"),
       bg="#0284c7",
       fg="white",
