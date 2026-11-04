@@ -1,14 +1,15 @@
+from datetime import datetime, timedelta
 import os
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 
-# Nombre del archivo de persistencia
+# Archivos de persistencia
 ARCHIVO_USUARIOS = "usuarios.txt"
+ARCHIVO_EQUIPOS = "equipos_biomedicos.txt"
 
 
 def cargar_base_datos():
-  """Carga los usuarios desde el archivo de texto o crea los valores por defecto."""
   db = {
       "tecnologo_1": {
           "password": "123",
@@ -41,24 +42,56 @@ def cargar_base_datos():
             usu, pas, corr, rol = partes
             db[usu] = {"password": pas, "correo": corr, "rol": rol}
     except Exception as e:
-      print(f"Error al leer la base de datos: {e}")
+      print(f"Error al leer la base de datos de usuarios: {e}")
   else:
-    guardar_base_datos(db)
+    guardar_base_datos_usuarios(db)
 
   return db
 
 
-def guardar_base_datos(db):
-  """Guarda el diccionario actual de usuarios en el archivo de texto."""
+def guardar_base_datos_usuarios(db):
   try:
     with open(ARCHIVO_USUARIOS, "w", encoding="utf-8") as f:
       for usu, info in db.items():
         f.write(f"{usu}::{info['password']}::{info['correo']}::{info['rol']}\n")
   except Exception as e:
-    print(f"Error al guardar la base de datos: {e}")
+    print(f"Error al guardar usuarios: {e}")
 
 
-# Cargar usuarios al iniciar la aplicación
+def cargar_equipos():
+  equipos = []
+  if os.path.exists(ARCHIVO_EQUIPOS):
+    try:
+      with open(ARCHIVO_EQUIPOS, "r", encoding="utf-8") as f:
+        for linea in f:
+          partes = linea.strip().split("::")
+          if len(partes) == 8:
+            equipos.append({
+                "area": partes[0],
+                "nombre": partes[1],
+                "serial": partes[2],
+                "modelo": partes[3],
+                "funciones": partes[4],
+                "ultimo_registro": partes[5],
+                "prox_mant": partes[6],
+                "prox_calib": partes[7],
+            })
+    except Exception as e:
+      print(f"Error al leer equipos: {e}")
+  return equipos
+
+
+def guardar_equipos(equipos):
+  try:
+    with open(ARCHIVO_EQUIPOS, "w", encoding="utf-8") as f:
+      for eq in equipos:
+        f.write(
+            f"{eq['area']}::{eq['nombre']}::{eq['serial']}::{eq['modelo']}::{eq['funciones']}::{eq['ultimo_registro']}::{eq['prox_mant']}::{eq['prox_calib']}\n"
+        )
+  except Exception as e:
+    print(f"Error al guardar equipos: {e}")
+
+
 USUARIOS_DB = cargar_base_datos()
 
 
@@ -70,7 +103,6 @@ class SistemaBiomedicoApp:
     self.root.geometry("700x350")
     self.root.resizable(False, False)
 
-    # 1. PANEL IZQUIERDO: Carrusel de imágenes
     self.lbl_imagen = tk.Label(root, bg="#ffffff")
     self.lbl_imagen.place(x=0, y=0, width=350, height=350)
 
@@ -96,7 +128,6 @@ class SistemaBiomedicoApp:
 
     self.root.after(5000, self.proximo_slide)
 
-    # 2. PANEL DERECHO: Formulario de inicio de sesión con fondo blanco
     self.frame_form = tk.Frame(root, bg="#ffffff")
     self.frame_form.place(x=350, y=0, width=350, height=350)
 
@@ -329,7 +360,7 @@ class SistemaBiomedicoApp:
         return
 
       USUARIOS_DB[u] = {"password": p, "correo": c, "rol": r}
-      guardar_base_datos(USUARIOS_DB)
+      guardar_base_datos_usuarios(USUARIOS_DB)
       messagebox.showinfo(
           "Éxito", f"Usuario '{u}' registrado como {r}.", parent=ven_reg
       )
@@ -458,37 +489,405 @@ class SistemaBiomedicoApp:
     ).pack(pady=15)
 
 
-# --- PANTALLA PRINCIPAL DINÁMICA CON TEMA CLARO ---
+# --- VENTANA DE GESTIÓN DE EQUIPOS (CORREGIDA) ---
+def abrir_ventana_area(area_nombre, usuario_activo, rol_activo):
+  ven_area = tk.Toplevel()  # <-- Corregido para mantener el flujo principal
+  ven_area.title(f"Zona Clínica - {area_nombre}")
+  ven_area.geometry("900x580")
+  ven_area.config(bg="#f1f5f9")
+  ven_area.resizable(False, False)
+
+  header = tk.Frame(ven_area, bg="#0f172a", height=55)
+  header.pack(fill="x")
+  tk.Label(
+      header,
+      text=f"🏥 Área: {area_nombre}   |   Usuario: {usuario_activo} ({rol_activo})",
+      font=("Arial", 11, "bold"),
+      bg="#0f172a",
+      fg="#38bdf8",
+  ).pack(side="left", padx=20)
+
+  def cerrar_zona():
+    ven_area.destroy()
+    abrir_pantalla_principal(usuario_activo, rol_activo)
+
+  tk.Button(
+      header,
+      text="⬅ Volver al Panel",
+      font=("Arial", 9, "bold"),
+      bg="#334155",
+      fg="white",
+      relief="flat",
+      cursor="hand2",
+      command=cerrar_zona,
+  ).pack(side="right", padx=20)
+
+  cuerpo = tk.Frame(ven_area, bg="#f1f5f9")
+  cuerpo.pack(fill="both", expand=True, padx=20, pady=15)
+
+  lista_equipos = cargar_equipos()
+
+  def verificar_alertas():
+    hoy = datetime.now().date()
+    alertas = []
+    for eq in lista_equipos:
+      if eq["area"] == area_nombre:
+        try:
+          f_mant = datetime.strptime(eq["prox_mant"], "%Y-%m-%d").date()
+          dias_mant = (f_mant - hoy).days
+          if dias_mant <= 5:
+            alertas.append(
+                f"⚠️ El equipo '{eq['nombre']}' (Serial: {eq['serial']}) tiene su Mantenimiento próximo o vencido ({eq['prox_mant']})."
+            )
+        except Exception:
+          pass
+    if alertas:
+      messagebox.showwarning(
+          "🚨 Alerta de Mantenimiento", "\n".join(alertas), parent=ven_area
+      )
+    else:
+      messagebox.showinfo(
+          "Estado de Alertas",
+          "No hay equipos con alertas críticas próximas en esta zona.",
+          parent=ven_area,
+      )
+
+  def ventana_registrar_equipo():
+    ven_reg_eq = tk.Toplevel(ven_area)
+    ven_reg_eq.title(f"Registrar Equipo en {area_nombre}")
+    ven_reg_eq.geometry("400x420")
+    ven_reg_eq.config(bg="#ffffff")
+    ven_reg_eq.resizable(False, False)
+
+    tk.Label(
+        ven_reg_eq,
+        text="NUEVO EQUIPO BIOMÉDICO",
+        font=("Arial", 11, "bold"),
+        bg="#ffffff",
+        fg="#0284c7",
+    ).pack(pady=12)
+
+    campos = [
+        ("Nombre de la Máquina:", "entry_nombre"),
+        ("Número de Serie:", "entry_serial"),
+        ("Modelo:", "entry_modelo"),
+        ("Funciones Clínicas:", "entry_funciones"),
+        ("Próximo Mantenimiento (AAAA-MM-DD):", "entry_mant"),
+        ("Próxima Calibración (AAAA-MM-DD):", "entry_calib"),
+    ]
+
+    entries = {}
+    for label_text, key in campos:
+      tk.Label(
+          ven_reg_eq,
+          text=label_text,
+          font=("Arial", 9),
+          bg="#ffffff",
+          fg="#334155",
+      ).pack(anchor="w", padx=30)
+      ent = tk.Entry(
+          ven_reg_eq,
+          font=("Arial", 10),
+          width=32,
+          bg="#f1f5f9",
+          fg="#0f172a",
+          relief="flat",
+      )
+      ent.pack(pady=2)
+      entries[key] = ent
+
+    def guardar_nuevo_equipo():
+      nombre = entries["entry_nombre"].get().strip()
+      serial = entries["entry_serial"].get().strip()
+      modelo = entries["entry_modelo"].get().strip()
+      funciones = entries["entry_funciones"].get().strip()
+      mant = entries["entry_mant"].get().strip()
+      calib = entries["entry_calib"].get().strip()
+
+      if not nombre or not serial or not modelo or not mant or not calib:
+        messagebox.showerror(
+            "Error",
+            "Todos los campos principales y fechas son obligatorios.",
+            parent=ven_reg_eq,
+        )
+        return
+
+      ultimo_reg = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+      nuevo = {
+          "area": area_nombre,
+          "nombre": nombre,
+          "serial": serial,
+          "modelo": modelo,
+          "funciones": funciones if funciones else "N/A",
+          "ultimo_registro": ultimo_reg,
+          "prox_mant": mant,
+          "prox_calib": calib,
+      }
+
+      lista_equipos.append(nuevo)
+      guardar_equipos(lista_equipos)
+      messagebox.showinfo(
+          "Éxito", "Equipo registrado correctamente.", parent=ven_reg_eq
+      )
+      ven_reg_eq.destroy()
+      actualizar_tabla()
+
+    tk.Button(
+        ven_reg_eq,
+        text="Guardar Equipo",
+        font=("Arial", 10, "bold"),
+        bg="#0284c7",
+        fg="white",
+        width=25,
+        command=guardar_nuevo_equipo,
+    ).pack(pady=15)
+
+  def mostrar_accion_herramienta(accion):
+    messagebox.showinfo(
+        f"Herramienta de {rol_activo}",
+        f"Ejecutando en {area_nombre}:\n{accion}\n(Usuario: {usuario_activo})",
+        parent=ven_area,
+    )
+
+  frame_herramientas = tk.Frame(cuerpo, bg="#ffffff", bd=1, relief="solid", padx=15, pady=10)
+  frame_herramientas.pack(fill="x", pady=(0, 10))
+
+  tk.Label(
+      frame_herramientas,
+      text=f"🛠️ Herramientas de Gestión ({rol_activo}) en esta Zona:",
+      font=("Arial", 10, "bold"),
+      bg="#ffffff",
+      fg="#0f172a",
+  ).pack(anchor="w", pady=(0, 5))
+
+  sub_tools_frame = tk.Frame(frame_herramientas, bg="#ffffff")
+  sub_tools_frame.pack(fill="x")
+
+  if rol_activo == "Tecnólogo Biomédico":
+    tk.Button(
+        sub_tools_frame,
+        text="📅 Registrar Fechas y Procesos Operativos",
+        font=("Arial", 9, "bold"),
+        bg="#334155",
+        fg="white",
+        relief="flat",
+        cursor="hand2",
+        padx=10,
+        pady=5,
+        command=lambda: mostrar_accion_herramienta(
+            "Registro de fechas, observaciones y proceso operativo"
+        ),
+    ).pack(side="left", padx=5)
+
+    tk.Button(
+        sub_tools_frame,
+        text="📝 Agregar Observaciones Técnicas",
+        font=("Arial", 9, "bold"),
+        bg="#334155",
+        fg="white",
+        relief="flat",
+        cursor="hand2",
+        padx=10,
+        pady=5,
+        command=lambda: mostrar_accion_herramienta(
+            "Agregar observaciones de mantenimiento"
+        ),
+    ).pack(side="left", padx=5)
+
+  elif rol_activo in ["Ingeniero Biomédico", "Supervisor"]:
+    tk.Button(
+        sub_tools_frame,
+        text="👁️ Auditar Registros",
+        font=("Arial", 9, "bold"),
+        bg="#334155",
+        fg="white",
+        relief="flat",
+        cursor="hand2",
+        padx=8,
+        pady=5,
+        command=lambda: mostrar_accion_herramienta(
+            "Revisión y auditoría de trabajos de los tecnólogos"
+        ),
+    ).pack(side="left", padx=3)
+
+    tk.Button(
+        sub_tools_frame,
+        text="✏️ Editar y Analizar Mantenimientos",
+        font=("Arial", 9, "bold"),
+        bg="#334155",
+        fg="white",
+        relief="flat",
+        cursor="hand2",
+        padx=8,
+        pady=5,
+        command=lambda: mostrar_accion_herramienta(
+            "Edición de registros y análisis ingenieril"
+        ),
+    ).pack(side="left", padx=3)
+
+    tk.Button(
+        sub_tools_frame,
+        text="💰 Presupuestos Médicos",
+        font=("Arial", 9, "bold"),
+        bg="#334155",
+        fg="white",
+        relief="flat",
+        cursor="hand2",
+        padx=8,
+        pady=5,
+        command=lambda: mostrar_accion_herramienta(
+            "Control y revisión de presupuestos de máquinas"
+        ),
+    ).pack(side="left", padx=3)
+
+  tk.Button(
+      sub_tools_frame,
+      text="➕ Registrar Equipo",
+      font=("Arial", 9, "bold"),
+      bg="#0284c7",
+      fg="white",
+      relief="flat",
+      cursor="hand2",
+      padx=8,
+      pady=5,
+      command=ventana_registrar_equipo,
+  ).pack(side="right", padx=3)
+
+  tk.Button(
+      sub_tools_frame,
+      text="🔔 Alertas",
+      font=("Arial", 9, "bold"),
+      bg="#d97706",
+      fg="white",
+      relief="flat",
+      cursor="hand2",
+      padx=8,
+      pady=5,
+      command=verificar_alertas,
+  ).pack(side="right", padx=3)
+
+  frame_tabla_contenedor = tk.Frame(cuerpo, bg="#ffffff", bd=1, relief="solid")
+  frame_tabla_contenedor.pack(fill="both", expand=True)
+
+  tk.Label(
+      frame_tabla_contenedor,
+      text=f"📋 Inventario y Registro de Equipos en {area_nombre}",
+      font=("Arial", 11, "bold"),
+      bg="#ffffff",
+      fg="#0f172a",
+  ).pack(anchor="w", padx=15, pady=10)
+
+  canvas_tabla = tk.Canvas(frame_tabla_contenedor, bg="#ffffff", highlightthickness=0)
+  canvas_tabla.pack(fill="both", expand=True, padx=15, pady=5)
+
+  scroll_tabla = tk.Scrollbar(
+      frame_tabla_contenedor, orient="vertical", command=canvas_tabla.yview
+  )
+  scroll_tabla.pack(side="right", fill="y")
+  canvas_tabla.configure(yscrollcommand=scroll_tabla.set)
+
+  frame_items = tk.Frame(canvas_tabla, bg="#ffffff")
+  canvas_tabla.create_window((0, 0), window=frame_items, anchor="nw")
+
+  def actualizar_tabla():
+    for widget in frame_items.winfo_children():
+      widget.destroy()
+
+    filtrados = [eq for eq in lista_equipos if eq["area"] == area_nombre]
+
+    if not filtrados:
+      tk.Label(
+          frame_items,
+          text="No hay equipos registrados en esta área todavía.",
+          font=("Arial", 10),
+          bg="#ffffff",
+          fg="#64748b",
+      ).pack(pady=30)
+      return
+
+    for eq in filtrados:
+      tarjeta_eq = tk.Frame(
+          frame_items, bg="#f8fafc", bd=1, relief="solid", padx=10, pady=8
+      )
+      tarjeta_eq.pack(fill="x", pady=4, padx=5)
+
+      info_texto = (
+          f"Máquina: {eq['nombre']}  |  Modelo: {eq['modelo']}  |  Serial: {eq['serial']}\n"
+          f"Funciones: {eq['funciones']}\n"
+          f"🕒 Último Registro: {eq['ultimo_registro']}   |   📅 Próx. Mant: {eq['prox_mant']}   |   🔧 Próx. Calib: {eq['prox_calib']}"
+      )
+
+      lbl_detalles = tk.Label(
+          tarjeta_eq,
+          text=info_texto,
+          font=("Arial", 9),
+          bg="#f8fafc",
+          fg="#0f172a",
+          justify="left",
+      )
+      lbl_detalles.pack(side="left")
+
+      if rol_activo in ["Ingeniero Biomédico", "Supervisor"]:
+        btn_borrar_eq = tk.Button(
+            tarjeta_eq,
+            text="Eliminar",
+            font=("Arial", 8, "bold"),
+            bg="#ef4444",
+            fg="white",
+            relief="flat",
+            command=lambda s=eq["serial"]: eliminar_equipo(s),
+        )
+        btn_borrar_eq.pack(side="right", padx=5)
+
+    frame_items.update_idletasks()
+    canvas_tabla.config(scrollregion=canvas_tabla.bbox("all"))
+
+  def eliminar_equipo(serial):
+    if messagebox.askyesno(
+        "Confirmar",
+        f"¿Desea eliminar el equipo con serial {serial}?",
+        parent=ven_area,
+    ):
+      nonlocal lista_equipos
+      lista_equipos = [eq for eq in lista_equipos if eq["serial"] != serial]
+      guardar_equipos(lista_equipos)
+      actualizar_tabla()
+
+  actualizar_tabla()
+
+
+# --- PANTALLA PRINCIPAL (SELECCIÓN DE ZONA CLÍNICA - CORREGIDA) ---
 def abrir_pantalla_principal(usuario_activo, rol_activo):
-  ventana_principal = tk.Tk()
+  ventana_principal = tk.Toplevel()  # <-- Corregido para mantener el flujo principal
   ventana_principal.title(f"Sistema Biomédico - {rol_activo}")
-  ventana_principal.geometry("780x520")
-  ventana_principal.config(bg="#f8fafc")
+  ventana_principal.geometry("750x450")
+  ventana_principal.config(bg="#f1f5f9")
   ventana_principal.resizable(False, False)
 
-  header = tk.Frame(ventana_principal, bg="#e2e8f0", height=65)
+  header = tk.Frame(ventana_principal, bg="#0f172a", height=60)
   header.pack(fill="x")
 
-  lbl_bienvenida = tk.Label(
+  lbl_titulo_app = tk.Label(
       header,
-      text=f"Usuario: {usuario_activo} | Rol: {rol_activo}",
+      text="🏥 SELECCIÓN DE ZONA CLÍNICA",
       font=("Arial", 11, "bold"),
-      bg="#e2e8f0",
-      fg="#0f172a",
+      bg="#0f172a",
+      fg="#38bdf8",
   )
-  lbl_bienvenida.pack(side="left", padx=20)
+  lbl_titulo_app.pack(side="left", padx=20)
 
   def cerrar_sesion():
     ventana_principal.destroy()
     root_login = tk.Tk()
-    SistemaBiomedicoApp(root_login)
+    app = SistemaBiomedicoApp(root_login)
     root_login.mainloop()
 
   btn_salir = tk.Button(
       header,
       text="Cerrar Sesión",
       font=("Arial", 9, "bold"),
-      bg="#dc2626",
+      bg="#ef4444",
       fg="white",
       relief="flat",
       cursor="hand2",
@@ -496,34 +895,77 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
   )
   btn_salir.pack(side="right", padx=20)
 
-  cuerpo = tk.Frame(ventana_principal, bg="#f8fafc")
-  cuerpo.pack(fill="both", expand=True, padx=30, pady=15)
+  sub_header = tk.Frame(ventana_principal, bg="#ffffff", height=45)
+  sub_header.pack(fill="x", pady=(0, 15))
+
+  lbl_bienvenida = tk.Label(
+      sub_header,
+      text=f"Usuario: {usuario_activo}   |   Rol: {rol_activo}",
+      font=("Arial", 10),
+      bg="#ffffff",
+      fg="#475569",
+  )
+  lbl_bienvenida.pack(side="left", padx=25)
+
+  cuerpo = tk.Frame(ventana_principal, bg="#f1f5f9")
+  cuerpo.pack(fill="both", expand=True, padx=40, pady=10)
 
   tk.Label(
       cuerpo,
-      text="Panel de Control - Gestión de Equipos Biomédicos",
-      font=("Arial", 13, "bold"),
-      bg="#f8fafc",
+      text="Seleccione el área hospitalaria a gestionar:",
+      font=("Arial", 12, "bold"),
+      bg="#f1f5f9",
       fg="#0f172a",
-  ).pack(anchor="w", pady=5)
+  ).pack(anchor="w", pady=(0, 15))
 
-  def mostrar_accion(mensaje):
-    messagebox.showinfo(
-        f"Módulo de {rol_activo}",
-        f"Accediendo a: {mensaje}\n(Perfil actual: {usuario_activo})",
-    )
+  def ingresar_zona(nombre_area):
+    ventana_principal.destroy()
+    abrir_ventana_area(nombre_area, usuario_activo, rol_activo)
 
-  # --- VENTANA DE GESTIÓN DE PERFILES CON TEMA CLARO ---
+  btn_uci = tk.Button(
+      cuerpo,
+      text="🏥 Cuidados Intensivos (UCI)\n(Gestión de equipos, ventiladores, monitores y herramientas de rol)",
+      font=("Arial", 10, "bold"),
+      bg="#0284c7",
+      fg="white",
+      activebackground="#0369a1",
+      activeforeground="white",
+      relief="flat",
+      cursor="hand2",
+      justify="left",
+      padx=15,
+      pady=12,
+      command=lambda: ingresar_zona("Cuidados Intensivos (UCI)"),
+  )
+  btn_uci.pack(fill="x", pady=8)
+
+  btn_neo = tk.Button(
+      cuerpo,
+      text="👶 Neonatología\n(Gestión de incubadoras, cunas radiantes y herramientas de rol)",
+      font=("Arial", 10, "bold"),
+      bg="#0284c7",
+      fg="white",
+      activebackground="#0369a1",
+      activeforeground="white",
+      relief="flat",
+      cursor="hand2",
+      justify="left",
+      padx=15,
+      pady=12,
+      command=lambda: ingresar_zona("Neonatología"),
+  )
+  btn_neo.pack(fill="x", pady=8)
+
   def gestionar_usuarios():
     ven_gestion = tk.Toplevel(ventana_principal)
     ven_gestion.title("Gestión y Eliminación de Perfiles")
-    ven_gestion.geometry("420x360")
+    ven_gestion.geometry("420x380")
     ven_gestion.config(bg="#ffffff")
     ven_gestion.resizable(False, False)
 
     tk.Label(
         ven_gestion,
-        text="PERFILES REGISTRADOS",
+        text="GESTIÓN DE PERFILES DE USUARIO",
         font=("Arial", 11, "bold"),
         bg="#ffffff",
         fg="#0284c7",
@@ -537,17 +979,17 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
         widget.destroy()
 
       for usu, info in list(USUARIOS_DB.items()):
-        fila = tk.Frame(frame_lista, bg="#f1f5f9", pady=5)
+        fila = tk.Frame(frame_lista, bg="#f8fafc", pady=6, padx=5)
         fila.pack(fill="x", pady=3)
 
         lbl_info = tk.Label(
             fila,
             text=f"{usu} ({info['rol']})",
             font=("Arial", 9, "bold"),
-            bg="#f1f5f9",
+            bg="#f8fafc",
             fg="#0f172a",
         )
-        lbl_info.pack(side="left", padx=10)
+        lbl_info.pack(side="left", padx=5)
 
         puede_borrar = True
         etiqueta_estado = ""
@@ -564,21 +1006,22 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
               fila,
               text="Eliminar",
               font=("Arial", 8, "bold"),
-              bg="#dc2626",
+              bg="#ef4444",
               fg="white",
               relief="flat",
+              cursor="hand2",
               command=lambda u=usu: confirmar_eliminacion(u),
           )
-          btn_borrar.pack(side="right", padx=10)
+          btn_borrar.pack(side="right", padx=5)
         else:
           lbl_tag = tk.Label(
               fila,
               text=etiqueta_estado,
               font=("Arial", 8),
-              bg="#f1f5f9",
+              bg="#f8fafc",
               fg="#64748b",
           )
-          lbl_tag.pack(side="right", padx=10)
+          lbl_tag.pack(side="right", padx=5)
 
     def confirmar_eliminacion(u):
       if messagebox.askyesno(
@@ -588,7 +1031,7 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
       ):
         if u in USUARIOS_DB:
           del USUARIOS_DB[u]
-          guardar_base_datos(USUARIOS_DB)
+          guardar_base_datos_usuarios(USUARIOS_DB)
           messagebox.showinfo(
               "Eliminado",
               f"El perfil '{u}' fue borrado con éxito.",
@@ -598,160 +1041,21 @@ def abrir_pantalla_principal(usuario_activo, rol_activo):
 
     actualizar_lista()
 
-  # --- OPCIONES DE ÁREAS MÉDICAS (UCI Y NEONATOLOGÍA) ---
-  tk.Label(
-      cuerpo,
-      text="Áreas de Especialización Médica:",
-      font=("Arial", 10, "bold"),
-      bg="#f8fafc",
-      fg="#0284c7",
-  ).pack(anchor="w", pady=(5, 2))
-
-  tk.Button(
-      cuerpo,
-      text="🏥 Equipos de Cuidados Intensivos (UCI)",
-      font=("Arial", 9, "bold"),
-      bg="#0284c7",
-      fg="white",
-      activebackground="#0369a1",
-      activeforeground="white",
-      relief="flat",
-      width=45,
-      anchor="w",
-      padx=10,
-      command=lambda: mostrar_accion(
-          "Gestión de equipos en Cuidados Intensivos (Ventiladores, Monitores, etc.)"
-      ),
-  ).pack(pady=3)
-
-  tk.Button(
-      cuerpo,
-      text="👶 Equipos de Neonatología",
-      font=("Arial", 9, "bold"),
-      bg="#0284c7",
-      fg="white",
-      activebackground="#0369a1",
-      activeforeground="white",
-      relief="flat",
-      width=45,
-      anchor="w",
-      padx=10,
-      command=lambda: mostrar_accion(
-          "Gestión de equipos en Neonatología (Incubadoras, Cunas radiantes, etc.)"
-      ),
-  ).pack(pady=3)
-
-  tk.Label(
-      cuerpo,
-      text="Herramientas de Rol:",
-      font=("Arial", 10, "bold"),
-      bg="#f8fafc",
-      fg="#0284c7",
-  ).pack(anchor="w", pady=(8, 2))
-
-  # --- OPCIONES SEGÚN EL ROL ---
-  if rol_activo == "Tecnólogo Biomédico":
+  if rol_activo == "Supervisor":
     tk.Button(
         cuerpo,
-        text="📅 Registrar Fechas y Proceso de Mantenimiento",
+        text="👥 Gestionar y Eliminar Perfiles de Usuario",
         font=("Arial", 9, "bold"),
-        bg="#e2e8f0",
-        fg="#0f172a",
-        activebackground="#cbd5e1",
-        activeforeground="#0f172a",
+        bg="#dc2626",
+        fg="white",
+        activebackground="#b91c1c",
+        activeforeground="white",
         relief="flat",
-        width=45,
-        anchor="w",
-        padx=10,
-        command=lambda: mostrar_accion(
-            "Registro de fechas, observaciones y proceso operativo"
-        ),
-    ).pack(pady=3)
-
-    tk.Button(
-        cuerpo,
-        text="📝 Agregar Observaciones Técnicas",
-        font=("Arial", 9, "bold"),
-        bg="#e2e8f0",
-        fg="#0f172a",
-        activebackground="#cbd5e1",
-        activeforeground="#0f172a",
-        relief="flat",
-        width=45,
-        anchor="w",
-        padx=10,
-        command=lambda: mostrar_accion("Agregar observaciones de mantenimiento"),
-    ).pack(pady=3)
-
-  elif rol_activo in ["Ingeniero Biomédico", "Supervisor"]:
-    tk.Button(
-        cuerpo,
-        text="👁️ Ver y Auditar Registros de Tecnólogos",
-        font=("Arial", 9, "bold"),
-        bg="#e2e8f0",
-        fg="#0f172a",
-        activebackground="#cbd5e1",
-        activeforeground="#0f172a",
-        relief="flat",
-        width=45,
-        anchor="w",
-        padx=10,
-        command=lambda: mostrar_accion(
-            "Visualización y revisión de trabajos de los tecnólogos"
-        ),
-    ).pack(pady=3)
-
-    tk.Button(
-        cuerpo,
-        text="✏️ Editar, Corregir y Analizar Mantenimientos",
-        font=("Arial", 9, "bold"),
-        bg="#e2e8f0",
-        fg="#0f172a",
-        activebackground="#cbd5e1",
-        activeforeground="#0f172a",
-        relief="flat",
-        width=45,
-        anchor="w",
-        padx=10,
-        command=lambda: mostrar_accion(
-            "Edición de registros y emisión de análisis ingenieril"
-        ),
-    ).pack(pady=3)
-
-    tk.Button(
-        cuerpo,
-        text="💰 Gestión de Presupuestos de Equipos Médicos",
-        font=("Arial", 9, "bold"),
-        bg="#e2e8f0",
-        fg="#0f172a",
-        activebackground="#cbd5e1",
-        activeforeground="#0f172a",
-        relief="flat",
-        width=45,
-        anchor="w",
-        padx=10,
-        command=lambda: mostrar_accion(
-            "Control y revisión de presupuestos de máquinas biomédicas"
-        ),
-    ).pack(pady=3)
-
-    if rol_activo == "Supervisor":
-      tk.Button(
-          cuerpo,
-          text="👥 Gestionar y Eliminar Perfiles de Usuario",
-          font=("Arial", 9, "bold"),
-          bg="#b91c1c",
-          fg="white",
-          activebackground="#991b1b",
-          activeforeground="white",
-          relief="flat",
-          width=45,
-          anchor="w",
-          padx=10,
-          command=gestionar_usuarios,
-      ).pack(pady=3)
-
-  ventana_principal.mainloop()
+        cursor="hand2",
+        padx=15,
+        pady=8,
+        command=gestionar_usuarios,
+    ).pack(fill="x", pady=(15, 0))
 
 
 if __name__ == "__main__":
