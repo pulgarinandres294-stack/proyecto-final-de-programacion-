@@ -1,0 +1,85 @@
+1
+DEFINICION DE LOS OBJETIVOS
+ 
+*CANCER DE MAMA 
+
+¿Cómo se relacionan las variables clínicas y metabólicas disponibles (como glucosa, índice de masa corporal, insulina, presión arterial y edad) con el diagnóstico positivo de diabetes (1) frente al negativo (0) en este conjunto de datos?
+
+-RELEVANCIA O IMPORTANCIA
+
+Analizar estas variables cuantitativas es relevante porque ayuda a identificar qué rasgos morfológicos separan mejor ambos diagnósticos a partir de imágenes digitalizadas de biopsias, aportando un apoyo estadístico clave para el análisis exploratorio y la clasificación en salud.
+
+-ALCANCE SEGUN COLUMNAS DISPONIBLES 
+
+Es totalmente alcanzable porque el archivo (569 registros y 32 columnas, delimitado por punto y coma, sin valores nulos faltantes) incluye el identificador (id), la variable objetivo de diagnóstico y 30 variables numéricas de medidas morfológicas (como radio, textura, perímetro, área, suavidad, compacidad, concavidad y simetría, en promedio, error estándar y peor caso).
+
+*DIABETES 
+
+¿Cómo se relacionan las variables clínicas y metabólicas disponibles (como glucosa, índice de masa corporal, insulina, presión arterial y edad) con el diagnóstico positivo de diabetes (1) frente al negativo (0) en este conjunto de datos?
+
+-RELEVANCIA O IMPORTANCIA 
+
+Estudiar estos indicadores es importante porque permite detectar patrones asociados al diagnóstico de diabetes y evaluar la calidad de los registros clínicos (incluyendo posibles valores atípicos o ceros anómalos) antes de sacar conclusiones o entrenar modelos predictivos.
+
+-ALCANCE SEGUN COLUMNAS 
+
+Es alcanzable porque la base de datos (768 registros y 9 columnas, sin valores nulos explícitos en celdas) cuenta con la variable objetivo y variables clínicas y demográficas como embarazos, glucosa, presión arterial diastólica, grosor del pliegue cutáneo del tríceps, insulina sérica a 2 horas, IMC, función de pedigrí de diabetes y edad.
+
+
+
+2 
+DESCRIPCION DE LA BASE DE DATOS 
+
+2.1
+
+*NOMBRE Y FUENTE DE LA BASE DE DATOS 
+
+-Conjunto de datos de diagnóstico de cáncer de mama de Wisconsin (Breast Cancer Wisconsin Diagnostic)
+
+-Conjunto de datos sobre diabetes de los Institutos Nacionales de Diabetes y Enfermedades Digestivas y Renales (Pima Indians Diabetes Dataset), correspondiente a tu hoja de cálculo de diabetes
+
+*DESCRIPCION DE LAS BASES DE DATOS 
+
+2.2
+
+-CANCER DE MAMA 
+
+-Contiene información orientada al análisis estadístico y la clasificación de tumores mamarios. Sus 30 variables numéricas miden propiedades morfológicas de los núcleos celulares extraídas a partir de imágenes digitalizadas de biopsias. Estas medidas se agrupan en tres variantes por característica: valor promedio (_mean / promedio), error estándar (_se / error estándar) y promedio de los tres valores más altos o "peor caso" (_worst / peor caso).
+
+- DIABETES 
+Conjunto clásico utilizado para análisis predictivo y modelos de aprendizaje automático en salud. Reúne variables clínicas y demográficas junto con un indicador de diagnóstico de diabetes, sin valores nulos explícitos en las celdas.
+
+2.3
+
+*NUMEROS DE FILAS Y COLUMNAS 
+
+CANCER DE MAMA 
+-Contiene 569 registros (filas) y 32 columnas (delimitadas por punto y coma ;), sin valores nulos ni faltantes
+
+DIABETES
+-Consta de 768 registros (filas) y 9 columnas, sin valores nulos explícitos en las celdas
+
+2.4
+
+*DESCRIPCION DE CADA COLUMNA , NOMBRE, TIPO DE DATO Y SIGNIFICADO
+
+CANCER DE MAMA
+
+-Identificador (id): Identificador único por paciente (numérico/entero).
+-Diagnóstico (diagnosis / diagnostico): Variable objetivo que indica el tipo de tumor (texto/categórico): B (benigno, 357 casos / 62,7 %) y M (maligno, 212 casos / 37,3 %).
+-30 variables morfológicas numéricas (decimales / float): Miden rasgos como radio, textura, perímetro, área, suavidad, compacidad, concavidad y simetría (entre otras métricas morfológicas del núcleo celular), presentadas en sus versiones de promedio, error estándar y peor caso. (Tip: al abrir el archivo en Python con df.info() y df.columns, copia la tabla exacta con los nombres exactos de las 32 columnas y su dtype exacto).
+
+DIABETES 
+
+-Embarazos (Pregnancies / Embarazos): Número de embarazos (numérico/entero; promedio de 3,8 y máximo de 17 en el resumen).   
+-Glucosa (Glucose / Glucosa): Concentración de glucosa en plasma en una prueba de tolerancia oral (numérico; media de 120,9 en el resumen).   
+-Presión arterial (BloodPressure / Presión arterial): Presión arterial diastólica en mm Hg (numérico).   
+-Grosor de la piel (SkinThickness / Grosor de la piel): Grosor del pliegue cutáneo del tríceps en mm (numérico).   
+-Insulina (Insulin / Insulina): Insulina sérica en 2 horas (numérico).   
+-IMC (BMI / IMC): Índice de masa corporal calculado como peso en kg dividido por altura en metros al cuadrado (numérico/decimal; media de 32,0 en el resumen).   
+-Función de pedigrí de diabetes (DiabetesPedigreeFunction). 
+-Indicador del historial familiar y genético de la enfermedad (numérico/decimal).   
+-Edad (Age / Edad): Edad del paciente en años (numérico/entero; 
+-rango de 21 a 81 años y media de 33,2 en el resumen).  
+-Resultado (Outcome / Resultado). 
+-Variable objetivo que indica si el paciente fue diagnosticado con diabetes (1, 268 pacientes / 34,9 %) o no (0, 500 pacientes / 65,1 %) (entero/binario).
