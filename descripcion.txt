@@ -1,0 +1,23 @@
+DESCRICION DE LA BASE DE DATOS 
+
+El archivo data.csv corresponde al conocido conjunto de datos de diagnóstico de cáncer de mama de Wisconsin (Breast Cancer Wisconsin Diagnostic), utilizado frecuentemente para análisis estadístico y clasificación médica.
+
+Dimensiones y calidad: Contiene 569 registros (filas) y 32 columnas, delimitados por punto y coma (;), sin valores nulos ni faltantes.
+
+Identificación y variable objetivo (diagnosis): Incluye un identificador único por paciente (id) y el diagnóstico del tumor, distribuido en 357 casos benignos (B, 62.7 %) y 212 malignos (M, 37.3 %).
+
+Variables numéricas (30 características): Miden propiedades morfológicas de los núcleos celulares extraídas de imágenes digitalizadas de biopsias (radio, textura, perímetro, área, suavidad, compacidad, concavidad, puntos cóncavos, simetría y dimensión fractal). Cada propiedad se reporta en tres variantes:
+
+_mean: valor promedio.
+
+_se: error estándar.
+
+_worst: promedio de los tres valores más altos ("peor" caso).
+Característica
+(promedio)	Media 	Mediana 	Minimo	Maximo
+radius	14.13	13.37	6.98	28.11
+texture	19.29	18.84	9.71	39.28
+perimeter	91.97	86.24	43.79	188.50
+area	654.89	551.10	143.50	2501.00
+
+smoothness	0.096	0.096	0.053	0.163
