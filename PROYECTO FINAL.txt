@@ -66,20 +66,126 @@ DIABETES
 CANCER DE MAMA
 
 -Identificador (id): Identificador único por paciente (numérico/entero).
+
 -Diagnóstico (diagnosis / diagnostico): Variable objetivo que indica el tipo de tumor (texto/categórico): B (benigno, 357 casos / 62,7 %) y M (maligno, 212 casos / 37,3 %).
+
 -30 variables morfológicas numéricas (decimales / float): Miden rasgos como radio, textura, perímetro, área, suavidad, compacidad, concavidad y simetría (entre otras métricas morfológicas del núcleo celular), presentadas en sus versiones de promedio, error estándar y peor caso. (Tip: al abrir el archivo en Python con df.info() y df.columns, copia la tabla exacta con los nombres exactos de las 32 columnas y su dtype exacto).
+
+radius: radio (distancia media del centro al perímetro).
+
+texture: textura (desviación estándar de los valores en escala de grises).perimeter: perímetro del núcleo.
+
+area: área del núcleo.smoothness: suavidad (variación local en longitudes de radio).
+
+compactness: compacidad (perímetro^2) /área - 1.0).
+
+concavity: concavidad (severidad de las porciones cóncavas del contorno).
+
+concave points: puntos cóncavos (número de porciones cóncavas del contorno).
+
+symmetry: simetría del núcleo.fractal_dimension: dimensión fractal ("aproximación de línea costera" - 1).
 
 DIABETES 
 
--Embarazos (Pregnancies / Embarazos): Número de embarazos (numérico/entero; promedio de 3,8 y máximo de 17 en el resumen).   
+-Embarazos (Pregnancies / Embarazos): Número de embarazos (numérico/entero; promedio de 3,8 y máximo de 17 en el resumen).
+   
 -Glucosa (Glucose / Glucosa): Concentración de glucosa en plasma en una prueba de tolerancia oral (numérico; media de 120,9 en el resumen).   
--Presión arterial (BloodPressure / Presión arterial): Presión arterial diastólica en mm Hg (numérico).   
--Grosor de la piel (SkinThickness / Grosor de la piel): Grosor del pliegue cutáneo del tríceps en mm (numérico).   
--Insulina (Insulin / Insulina): Insulina sérica en 2 horas (numérico).   
--IMC (BMI / IMC): Índice de masa corporal calculado como peso en kg dividido por altura en metros al cuadrado (numérico/decimal; media de 32,0 en el resumen).   
--Función de pedigrí de diabetes (DiabetesPedigreeFunction). 
--Indicador del historial familiar y genético de la enfermedad (numérico/decimal).   
--Edad (Age / Edad): Edad del paciente en años (numérico/entero; 
--rango de 21 a 81 años y media de 33,2 en el resumen).  
--Resultado (Outcome / Resultado). 
+
+-Presión arterial (BloodPressure / Presión arterial): Presión arterial diastólica en mm Hg (numérico).
+   
+-Grosor de la piel (SkinThickness / Grosor de la piel): Grosor del pliegue cutáneo del tríceps en mm (numérico).
+   
+-Insulina (Insulin / Insulina): Insulina sérica en 2 horas (numérico).
+   
+-IMC (BMI / IMC): Índice de masa corporal calculado como peso en kg dividido por altura en metros al cuadrado (numérico/decimal; media de 32,0 en el resumen).
+   
+-Función de pedigrí de diabetes (DiabetesPedigreeFunction).
+ 
+-Indicador del historial familiar y genético de la enfermedad (numérico/decimal).
+   
+-Edad (Age / Edad): Edad del paciente en años (numérico/entero;
+ 
+-rango de 21 a 81 años y media de 33,2 en el resumen).
+  
+-Resultado (Outcome / Resultado).
+ 
 -Variable objetivo que indica si el paciente fue diagnosticado con diabetes (1, 268 pacientes / 34,9 %) o no (0, 500 pacientes / 65,1 %) (entero/binario).
+
+
+Fase 3 – PREPROCESAMIENTOS Y LIMPIEZA DE DATOS 
+
+3.1 - shape
+
+Cáncer de mama (filas, columnas): (569, 1)
+Diabetes (filas, columnas): (768, 9)
+
+3.2- identificador de valores nulos o faltantes por columna 
+
+
+-Nulos en diabetes:
+ 
+Pregnancies                 0
+Glucose                     0
+BloodPressure               0
+SkinThickness               0
+Insulin                     0
+BMI                         0
+DiabetesPedigreeFunction    0
+Age                         0
+Outcome                     0
+dtype: int64
+
+- Nulos en cáncer de mama:
+ 
+id                         0
+diagnosis                  0
+radius_mean                0
+texture_mean               0
+perimeter_mean             0
+area_mean                  0
+smoothness_mean            0
+compactness_mean           0
+concavity_mean             0
+concave points_mean        0
+symmetry_mean              0
+fractal_dimension_mean     0
+radius_se                  0
+texture_se                 0
+perimeter_se               0
+area_se                    0
+smoothness_se              0
+compactness_se             0
+concavity_se               0
+concave points_se          0
+symmetry_se                0
+fractal_dimension_se       0
+radius_worst               0
+texture_worst              0
+perimeter_worst            0
+area_worst                 0
+smoothness_worst           0
+compactness_worst          0
+concavity_worst            0
+concave points_worst       0
+symmetry_worst             0
+fractal_dimension_worst    0
+dtype: int64
+
+3.3- deteccion de duplicados 
+
+Duplicados en cáncer: 0
+Duplicados en diabetes: 0
+
+3.4- revision de tipos de datos y consistencias de valores 
+
+CANCER DE MAMA 
+dtypes: float64(30), int64(1), object(1)
+
+DIABETES 
+
+dtypes: float64(2), int64(7)
+
+
+4 Limpieza 
+
+
